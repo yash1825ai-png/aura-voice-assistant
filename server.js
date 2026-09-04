@@ -11,7 +11,7 @@ app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3.6-flash';
 
 const SYSTEM_PROMPT =
   "You are Aura, a concise, warm voice assistant speaking answers aloud to " +
@@ -32,7 +32,9 @@ const chatLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests. Wait a moment and try again.' }
+  message: {
+    error: 'Too many requests. Wait a moment and try again.'
+  }
 });
 
 app.post('/api/chat', chatLimiter, async (req, res) => {
@@ -45,23 +47,32 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
   const { messages } = req.body || {};
 
   if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'No conversation was sent.' });
+    return res.status(400).json({
+      error: 'No conversation was sent.'
+    });
   }
 
   const cleanMessages = messages
-    .filter(m =>
-      m &&
-      (m.role === 'user' || m.role === 'assistant') &&
-      typeof m.text === 'string'
+    .filter(
+      m =>
+        m &&
+        (m.role === 'user' || m.role === 'assistant') &&
+        typeof m.text === 'string'
     )
     .map(m => ({
       role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.text.slice(0, MAX_MESSAGE_CHARS) }]
+      parts: [
+        {
+          text: m.text.slice(0, MAX_MESSAGE_CHARS)
+        }
+      ]
     }))
     .slice(-MAX_HISTORY_MESSAGES);
 
   if (!cleanMessages.length) {
-    return res.status(400).json({ error: 'No valid messages were found.' });
+    return res.status(400).json({
+      error: 'No valid messages were found.'
+    });
   }
 
   if (cleanMessages[cleanMessages.length - 1].role !== 'user') {
@@ -80,7 +91,11 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
         },
         body: JSON.stringify({
           systemInstruction: {
-            parts: [{ text: SYSTEM_PROMPT }]
+            parts: [
+              {
+                text: SYSTEM_PROMPT
+              }
+            ]
           },
           contents: cleanMessages,
           generationConfig: {
@@ -110,7 +125,6 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
       "I didn't get a proper response that time.";
 
     res.json({ reply });
-
   } catch (err) {
     console.error('Failed to reach Gemini API:', err);
 
