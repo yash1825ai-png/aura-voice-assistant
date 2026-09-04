@@ -33,8 +33,14 @@ const MAX_HISTORY_MESSAGES = 20; // caps token usage / cost per request
 
 app.use(express.json({ limit: '200kb' }));
 
-// Serve the frontend
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve only the root-level index.html — not a general static
+// directory. index.html is self-contained (its CSS and JS are
+// inline), so there are no other frontend assets to expose, and
+// nothing else in the repo (server.js, package.json, .env, etc.)
+// is served to the browser.
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Basic abuse protection for the paid upstream API.
 const chatLimiter = rateLimit({
